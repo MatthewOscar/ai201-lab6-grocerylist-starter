@@ -4,12 +4,12 @@ Fill this in as you work through the milestones. Each section mirrors the struct
 
 ---
 
-## PR #1 — Bulk Purchase (`pr1_bulk_purchase.py`)
+## PR #1 - Bulk Purchase (`pr1_bulk_purchase.py`)
 
 ### Summary
 *What does this PR do? (1–2 sentences in your own words)*
 
-> Adds a bulk endpoint that marks every item in a list as purchased in one request. The happy path runs, but the implementation updates too many rows and can corrupt existing purchase attribution.
+> Adds a bulk endpoint that marks every item in a list as purchased in one request. The simple case works, but the implementation updates too many rows and can corrupt existing purchase attribution.
 
 ### Issues
 
@@ -34,27 +34,27 @@ For each issue you find, note: where it is (file + function), what's wrong, and 
 - Suggested fix: Match the existing `mark_purchased` route pattern: return `400` with `{"error": "Missing required field: user_id"}` before making any database changes.
 
 ### Questions for the Author
-*Things you're uncertain about — design choices that could be intentional or bugs depending on intent.*
+*Things you're uncertain about: design choices that could be intentional or bugs depending on intent.*
 
 > Should this endpoint also validate that the list exists and return a clean 404 when it does not? The current PR code would return `{"purchased": 0}` for a bad list ID, which may not match the rest of the API.
 
 ### Verdict
-- [ ] Approve — ship it
-- [x] Request Changes — needs fixes before merging
-- [ ] Comment — needs discussion before a verdict
+- [ ] Approve: ship it
+- [x] Request Changes: needs fixes before merging
+- [ ] Comment: needs discussion before a verdict
 
 **Rationale** *(1–2 sentences)*:
 
-> Request changes because the endpoint can overwrite existing `purchased_by` / `purchased_at` values and can write `null` attribution when `user_id` is omitted. Those are data integrity bugs, not just response-format issues.
+> Request changes because the endpoint can overwrite existing `purchased_by` / `purchased_at` values and can write `null` attribution when `user_id` is omitted. Those are data integrity bugs, and the endpoint should not merge until they are fixed.
 
 ---
 
-## PR #2 — List Stats (`pr2_list_stats.py`)
+## PR #2 - List Stats (`pr2_list_stats.py`)
 
 ### Summary
 *What does this PR do? (1–2 sentences in your own words)*
 
-> Adds a stats endpoint with total, purchased, remaining, and category counts for a list. The totals work, but the category breakdown does not match the active-shopping use case and the endpoint treats missing lists as empty lists.
+> Adds a stats endpoint with total, purchased, remaining, and category counts for a list. The total fields are plausible, but the category breakdown does not match the active-shopping use case and the endpoint treats missing lists as empty lists.
 
 ### Issues
 
@@ -77,14 +77,14 @@ For each issue you find, note: where it is (file + function), what's wrong, and 
 - Suggested fix: N/A
 
 ### Questions for the Author
-*A good code review often surfaces design questions, not just bugs. What would you want to clarify before approving?*
+*A good code review often surfaces design questions as well as bugs. What would you want to clarify before approving?*
 
 > Should `by_category` omit categories that only have purchased items, or include them with a zero count? The frontend request sounds like omitting them is fine, but the API contract should be explicit.
 
 ### Verdict
-- [ ] Approve — ship it
-- [x] Request Changes — needs fixes before merging
-- [ ] Comment — needs discussion before a verdict
+- [ ] Approve: ship it
+- [x] Request Changes: needs fixes before merging
+- [ ] Comment: needs discussion before a verdict
 
 **Rationale** *(1–2 sentences)*:
 
@@ -102,7 +102,7 @@ For each issue you find, note: where it is (file + function), what's wrong, and 
 
 **2.** Which issues do you think an LLM reviewer (like Claude reviewing its own code) would most likely miss? Why?
 
-> It would be most likely to miss the semantic mismatch in PR #2 and the already-purchased overwrite in PR #1. Both require testing or reasoning about pre-existing state, not just checking whether the happy path compiles and returns data.
+> It would be most likely to miss the semantic mismatch in PR #2 and the already-purchased overwrite in PR #1. Both require testing or reasoning about pre-existing state, beyond checking whether the happy path compiles and returns data.
 
 **3.** One thing you'd add to a code review checklist for AI-generated backend code:
 
