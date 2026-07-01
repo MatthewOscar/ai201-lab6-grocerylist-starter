@@ -150,3 +150,65 @@ def mark_purchased(list_id: str, item_id: str, user_id: str) -> Item:
     item.purchased_at = datetime.now(timezone.utc)
     db.session.commit()
     return item
+
+
+def purchase_all_items(list_id: str, user_id: str) -> int:
+    """
+    Mark all unpurchased items in a list as purchased.
+
+    Args:
+        list_id: ID of the grocery list.
+        user_id: ID of the user performing the bulk purchase.
+
+    Returns:
+        The number of items newly marked as purchased.
+
+    Raises:
+        ValueError: If the list does not exist.
+    """
+    grocery_list = db.session.get(GroceryList, list_id)
+    if not grocery_list:
+        raise ValueError(f"List {list_id!r} not found")
+
+    items = Item.query.filter_by(list_id=list_id, is_purchased=False).all()
+    purchased_at = datetime.now(timezone.utc)
+    for item in items:
+        item.is_purchased = True
+        item.purchased_by = user_id
+        item.purchased_at = purchased_at
+
+    db.session.commit()
+    return len(items)
+
+
+def get_list_stats(list_id: str) -> dict:
+    """
+    Compute summary statistics for a grocery list.
+
+    The category breakdown is for remaining items so it can power the active
+    shopping view.
+
+    Raises:
+        ValueError: If the list does not exist.
+    """
+    grocery_list = db.session.get(GroceryList, list_id)
+    if not grocery_list:
+        raise ValueError(f"List {list_id!r} not found")
+
+    items = Item.query.filter_by(list_id=list_id).all()
+    total = len(items)
+    purchased = sum(1 for item in items if item.is_purchased)
+    remaining_items = [item for item in items if not item.is_purchased]
+
+    by_category = {}
+    for item in remaining_items:
+        category = item.category or "uncategorized"
+        by_category[category] = by_category.get(category, 0) + 1
+
+    return {
+        "list_id": list_id,
+        "total_items": total,
+        "purchased": purchased,
+        "remaining": len(remaining_items),
+        "by_category": by_category,
+    }
