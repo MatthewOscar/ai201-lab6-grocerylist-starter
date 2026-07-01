@@ -38,6 +38,10 @@ For each issue you find, note: where it is (file + function), what's wrong, and 
 
 > Should this endpoint also validate that the list exists and return a clean 404 when it does not? The current PR code would return `{"purchased": 0}` for a bad list ID, which may not match the rest of the API.
 
+### Impact Analysis
+
+> If this endpoint runs without a `user_id`, every item it touches can lose the record of who purchased it. That affects shoppers who need to know who picked up an item, support staff investigating list history, and any audit or analytics feature built on `purchased_by`. A downstream report could undercount real user activity or show purchased items with no accountable shopper. Since the bad write is committed to the database, the original attribution is not available through the normal app after the request completes.
+
 ### Verdict
 - [ ] Approve: ship it
 - [x] Request Changes: needs fixes before merging
