@@ -54,41 +54,41 @@ For each issue you find, note: where it is (file + function), what's wrong, and 
 ### Summary
 *What does this PR do? (1–2 sentences in your own words)*
 
->
+> Adds a stats endpoint with total, purchased, remaining, and category counts for a list. The totals work, but the category breakdown does not match the active-shopping use case and the endpoint treats missing lists as empty lists.
 
 ### Issues
 
 **Issue 1**
-- Location:
-- What's wrong:
-- Why it matters:
-- Suggested fix:
+- Location: `prs/pr2_list_stats.py`, `get_list_stats()`
+- What's wrong: `by_category` loops over `items`, and `items` contains every item in the list. The PR description asks for a breakdown of what is remaining by category.
+- Why it matters: Weekly Shop returned `remaining: 5`, but `by_category` summed to 8 because it included purchased items. A shopper could be told to visit sections for items already in the cart.
+- Suggested fix: Build `by_category` from only items where `is_purchased` is false.
 
 **Issue 2**
-- Location:
-- What's wrong:
-- Why it matters:
-- Suggested fix:
+- Location: `prs/pr2_list_stats.py`, `get_list_stats()` / `list_stats()`
+- What's wrong: The service never checks whether the grocery list exists, so `/lists/bad-list-id/stats` returns `200` with zero counts.
+- Why it matters: Callers cannot distinguish an empty existing list from a missing list. This also disagrees with the existing `/lists/<list_id>/items` endpoint, which returns `404` for the same bad ID.
+- Suggested fix: Look up the `GroceryList` first and raise/return a not-found error when it does not exist; have the route return a `404` JSON error.
 
 **Issue 3** *(if found)*
-- Location:
-- What's wrong:
-- Why it matters:
-- Suggested fix:
+- Location: N/A
+- What's wrong: No third blocking issue found.
+- Why it matters: N/A
+- Suggested fix: N/A
 
 ### Questions for the Author
 *A good code review often surfaces design questions, not just bugs. What would you want to clarify before approving?*
 
->
+> Should `by_category` omit categories that only have purchased items, or include them with a zero count? The frontend request sounds like omitting them is fine, but the API contract should be explicit.
 
 ### Verdict
 - [ ] Approve — ship it
-- [ ] Request Changes — needs fixes before merging
+- [x] Request Changes — needs fixes before merging
 - [ ] Comment — needs discussion before a verdict
 
 **Rationale** *(1–2 sentences)*:
 
->
+> Request changes because the response does not provide the remaining-by-category data the frontend requested, and the missing-list behavior is inconsistent with the existing API.
 
 ---
 
@@ -98,12 +98,12 @@ For each issue you find, note: where it is (file + function), what's wrong, and 
 
 **1.** Which issue was hardest to spot, and why?
 
->
+> PR #2's `by_category` bug was hardest because the code is internally consistent and returns plausible JSON. The mismatch only appears when comparing the frontend's "what's remaining" request against the exact set of items being counted.
 
 **2.** Which issues do you think an LLM reviewer (like Claude reviewing its own code) would most likely miss? Why?
 
->
+> It would be most likely to miss the semantic mismatch in PR #2 and the already-purchased overwrite in PR #1. Both require testing or reasoning about pre-existing state, not just checking whether the happy path compiles and returns data.
 
 **3.** One thing you'd add to a code review checklist for AI-generated backend code:
 
->
+> For every query, ask whether it selects exactly the records the PR description says should be read or changed, then test at least one pre-existing-state case, one missing-input case, and one missing-resource case.
